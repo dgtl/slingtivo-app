@@ -5,6 +5,7 @@
 // - Relays remote-control buttons to Slinger's /Remote page
 
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
@@ -13,6 +14,47 @@ const CFG = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf
 const PUBLIC = path.join(__dirname, 'public');
 const HLS = path.join(__dirname, 'hls');
 const PLAYLIST = path.join(HLS, 'live.m3u8');
+
+// ── Auto-update from GitHub on startup ──
+const GITHUB_REPO = 'dgtl/slingtivo-app';
+const GITHUB_BRANCH = 'main';
+const UPDATE_FILES = ['index.html', 'style.css', 'app.js', 'sw.js'];
+
+function fetchGitHub(filePath) {
+  return new Promise((resolve, reject) => {
+    const url = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${filePath}`;
+    https.get(url, { headers: { 'User-Agent': 'SlingTiVoApp' } }, res => {
+      if (res.statusCode === 301 || res.statusCode === 302) {
+        https.get(res.headers.location, { headers: { 'User-Agent': 'SlingTiVoApp' } }, res2 => {
+          let d = ''; res2.on('data', c => d += c); res2.on('end', () => resolve(d));
+        }).on('error', reject);
+        return;
+      }
+      if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode} for ${filePath}`));
+      let d = ''; res.on('data', c => d += c); res.on('end', () => resolve(d));
+    }).on('error', reject);
+  });
+}
+
+async function autoUpdate() {
+  log('Checking GitHub for updates...');
+  for (const file of UPDATE_FILES) {
+    try {
+      const content = await fetchGitHub(file);
+      const dest = path.join(PUBLIC, file);
+      const existing = fs.existsSync(dest) ? fs.readFileSync(dest, 'utf8') : '';
+      if (content !== existing) {
+        fs.writeFileSync(dest, content, 'utf8');
+        log(`  Updated: ${file}`);
+      } else {
+        log(`  Current: ${file}`);
+      }
+    } catch (e) {
+      log(`  Skip ${file}: ${e.message}`);
+    }
+  }
+  log('Update check done.');
+}
 
 let ffmpeg = null;
 let lastViewerHit = 0;
@@ -172,4 +214,7 @@ http.createServer(async (req, res) => {
     log('Error', e.message);
     json(res, 500, { ok: false, error: e.message });
   }
-}).listen(CFG.port, () => log(`SlingTiVo app running on http://localhost:${CFG.port}`));
+}).listen(CFG.port, async () => {
+  log(`SlingTiVo app running on http://localhost:${CFG.port}`);
+  await autoUpdate().catch(e => log('Auto-update failed:', e.message));
+});
