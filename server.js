@@ -195,6 +195,11 @@ http.createServer(async (req, res) => {
       return json(res, 200, { ok: status < 400, status });
     }
 
+    if (p === '/api/update' && req.method === 'POST') {
+      await autoUpdate();
+      return json(res, 200, { ok: true, message: 'Update check complete' });
+    }
+
     if (p === '/api/status') {
       return json(res, 200, { running: !!ffmpeg, uptime: ffmpeg ? Math.round((Date.now() - startedAt) / 1000) : 0 });
     }
