@@ -1,5 +1,5 @@
 // Caches the app shell so it opens instantly. Live video and remote calls always go to the network.
-const CACHE = 'slingtivo-v6';
+const CACHE = 'slingtivo-v7';
 const SHELL = ['/', '/index.html', '/style.css', '/app.js', '/hls.min.js', '/manifest.webmanifest',
   '/icons/icon-192.png', '/icons/icon-512.png'];
 

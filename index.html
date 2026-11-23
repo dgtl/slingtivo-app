@@ -11,7 +11,7 @@
   <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
   <link rel="icon" href="/icons/icon-192.png">
   <link rel="apple-touch-icon" href="/icons/icon-180.png">
-  <link rel="stylesheet" href="/style.css?v=6">
+  <link rel="stylesheet" href="/style.css?v=7">
   <title>SlingTiVo</title>
 </head>
 <body>
@@ -32,9 +32,9 @@
       <!-- GESTURE LOCK -->
       <div id="lockOverlay">
         <div id="lockBtn">
-          <svg id="lockRing" viewBox="0 0 88 88">
-            <circle class="ring-track" cx="44" cy="44" r="40"/>
-            <circle id="ringProgress" class="ring-fill" cx="44" cy="44" r="40"/>
+          <svg id="lockRing" viewBox="0 0 140 140">
+            <circle class="ring-track" cx="70" cy="70" r="60"/>
+            <circle id="ringProgress" class="ring-fill" cx="70" cy="70" r="60"/>
           </svg>
           <div id="lockIcon">🔒</div>
         </div>
@@ -50,6 +50,11 @@
 
       <div id="gestureHint">Swipe ↑↓ channel · swipe ←→ last channel · tap for controls</div>
     </section>
+
+    <!-- REMOTE HANDLE (swipe up or tap to show remote in portrait) -->
+    <div id="remoteHandle" data-act="toggleRemote">
+      <div class="handle-bar"></div>
+    </div>
 
     <!-- REMOTE -->
     <section id="remote">
@@ -107,6 +112,6 @@
   </div>
 
   <script src="/hls.min.js?v=5"></script>
-  <script src="/app.js?v=6"></script>
+  <script src="/app.js?v=7"></script>
 </body>
 </html>

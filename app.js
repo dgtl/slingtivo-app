@@ -56,7 +56,15 @@
       splash.classList.add('gone');
       watching = true;
       showHint();
-      lockGestures();   // start locked after stream connects
+      // Start unlocked — lock kicks in after 60s
+      gestureLocked = false;
+      app.classList.remove('locked');
+      setTimeout(() => {
+        if (!gestureLocked) {
+          lockGestures();
+          toast('🔒 Locked', 800);
+        }
+      }, LOCK_INITIAL_MS);
     } catch (e) {
       spinner.hidden = true;
       splash.classList.remove('gone');
@@ -237,8 +245,9 @@
   // ================================================================
   // GESTURE LOCK
   // ================================================================
-  const LOCK_HOLD_MS = 1200;       // how long to hold to unlock
+  const LOCK_HOLD_MS = 2500;       // how long to hold to unlock
   const LOCK_IDLE_MS = 45000;      // 45 seconds idle → re-lock
+  const LOCK_INITIAL_MS = 60000;   // lock kicks in 60s after launch
   const lockBtn = $('#lockBtn');
   const ringProgress = $('#ringProgress');
   const lockIcon = $('#lockIcon');
@@ -247,14 +256,14 @@
   let lockShowTimer = null;
   let idleTimer = null;
 
-  // Start locked
-  app.classList.add('locked');
+  // Start UNLOCKED — lock kicks in after LOCK_INITIAL_MS
+  // (don't add 'locked' class on load)
 
   function lockGestures() {
     gestureLocked = true;
     app.classList.add('locked');
     lockBtn.classList.remove('visible', 'holding');
-    ringProgress.style.strokeDashoffset = '251.3';
+    ringProgress.style.strokeDashoffset = '376.99';
     lockIcon.textContent = '🔒';
     clearTimeout(idleTimer);
   }
@@ -304,7 +313,7 @@
     lockBtn.classList.add('holding');
     // The CSS transition draws the ring over LOCK_HOLD_MS
     // Force a reflow so the transition starts from the reset position
-    ringProgress.style.strokeDashoffset = '251.3';
+    ringProgress.style.strokeDashoffset = '376.99';
     ringProgress.offsetHeight;  // force reflow
     lockBtn.classList.remove('holding');
     requestAnimationFrame(() => {
@@ -322,7 +331,7 @@
     clearTimeout(lockHoldTimer);
     lockHoldTimer = null;
     lockBtn.classList.remove('holding');
-    ringProgress.style.strokeDashoffset = '251.3';
+    ringProgress.style.strokeDashoffset = '376.99';
   };
   lockBtn.addEventListener('pointerup', cancelHold);
   lockBtn.addEventListener('pointercancel', cancelHold);
@@ -352,7 +361,13 @@
       toast(LABEL['Last']); sendKey('Last');
     } else if (ax < 12 && ay < 12 && Date.now() - st < 400) {   // tap
       if (app.classList.contains('remote-open')) app.classList.remove('remote-open');
-      else toggleControls();
+      else {
+        toggleControls();
+        // In portrait, also toggle the remote panel visibility
+        if (window.matchMedia('(orientation: portrait)').matches) {
+          app.classList.toggle('remote-hidden');
+        }
+      }
     }
   });
   stage.addEventListener('pointercancel', () => (tracking = false));
@@ -371,6 +386,23 @@
     app.classList.add('hint');
     setTimeout(() => app.classList.remove('hint'), 5000);
     localStorageSet('hintSeen', '1');
+  }
+
+  // ---------- portrait remote toggle ----------
+  const remoteHandle = $('#remoteHandle');
+  if (remoteHandle) {
+    remoteHandle.addEventListener('click', () => {
+      app.classList.toggle('remote-hidden');
+      resetIdleTimer();
+    });
+    // Swipe up on handle to show remote
+    let handleY = 0;
+    remoteHandle.addEventListener('touchstart', e => { handleY = e.touches[0].clientY; });
+    remoteHandle.addEventListener('touchend', e => {
+      const dy = handleY - e.changedTouches[0].clientY;
+      if (dy > 30) app.classList.remove('remote-hidden');
+      else if (dy < -30) app.classList.add('remote-hidden');
+    });
   }
 
   // ---------- top bar ----------
