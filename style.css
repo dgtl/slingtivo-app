@@ -1,0 +1,159 @@
+:root {
+  --bg: #0b0d12;
+  --panel: #151922;
+  --btn: #232937;
+  --btn-hi: #2f3748;
+  --text: #e9edf5;
+  --muted: #8a93a6;
+  --accent: #29b6f6;
+  --go: #2e7d32;
+  --rec: #e53935;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+  font: 16px/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overscroll-behavior: none; user-select: none; -webkit-user-select: none; }
+button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action: manipulation; }
+
+#app { height: 100dvh; display: flex; flex-direction: column; }
+
+/* ---------- Video stage ---------- */
+#stage { position: relative; background: #000; width: 100%; aspect-ratio: 16 / 9;
+  padding-top: var(--safe-t); touch-action: none; overflow: hidden; flex: none; }
+#video { width: 100%; height: 100%; object-fit: contain; background: #000; display: block; }
+
+#splash { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 16px; background: radial-gradient(circle at 50% 40%, #1b2333, #000 75%); z-index: 5; }
+#splash.gone { display: none; }
+.logo { font-weight: 800; letter-spacing: 3px; font-size: 28px; }
+.logo span { color: var(--accent); }
+.big { background: var(--accent); color: #001018; font-weight: 700; font-size: 20px; padding: 14px 34px; border-radius: 999px; }
+#splashMsg { color: var(--muted); font-size: 14px; padding: 0 20px; text-align: center; min-height: 18px; }
+
+#spinner { position: absolute; top: 50%; left: 50%; width: 44px; height: 44px; margin: -22px; z-index: 4;
+  border: 4px solid rgba(255,255,255,.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#toast { position: absolute; top: calc(14px + var(--safe-t)); left: 50%; transform: translateX(-50%) scale(.9);
+  background: rgba(0,0,0,.75); padding: 10px 18px; border-radius: 12px; font-weight: 700; font-size: 22px;
+  opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; z-index: 6; white-space: nowrap; }
+#toast.show { opacity: 1; transform: translateX(-50%) scale(1); }
+
+#topbar { position: absolute; bottom: 8px; right: 8px; display: flex; gap: 6px; z-index: 6;
+  opacity: 0; pointer-events: none; transition: opacity .25s; }
+#app.controls #topbar { opacity: 1; pointer-events: auto; }
+#topbar button { width: 44px; height: 44px; border-radius: 50%; background: rgba(0,0,0,.6); font-size: 20px; display: grid; place-items: center; padding: 0; }
+#topbar svg { display: block; }
+#topbar [data-act="remote"] { display: none; }
+
+#gestureHint { position: absolute; left: 0; right: 0; bottom: 10px; text-align: center; font-size: 12px;
+  color: rgba(255,255,255,.8); text-shadow: 0 1px 3px #000; pointer-events: none; opacity: 0; transition: opacity .4s; z-index: 3; }
+#app.hint #gestureHint { opacity: 1; }
+
+/* ---------- Gesture Lock ---------- */
+#lockOverlay {
+  position: absolute; inset: 0; z-index: 7;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+#app.locked #lockOverlay { pointer-events: auto; }
+
+#lockBtn {
+  position: relative;
+  width: 88px; height: 88px;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: opacity .4s ease;
+  cursor: pointer;
+  touch-action: none;
+}
+#lockBtn.visible { opacity: 1; }
+
+#lockIcon {
+  font-size: 32px;
+  filter: drop-shadow(0 0 8px rgba(0,0,0,.6));
+  transition: transform .15s, filter .15s;
+  pointer-events: none;
+}
+#lockBtn.holding #lockIcon {
+  transform: scale(1.15);
+  filter: drop-shadow(0 0 16px rgba(41,182,246,.5));
+}
+
+#lockRing {
+  position: absolute; inset: 0;
+  width: 88px; height: 88px;
+  transform: rotate(-90deg);
+}
+.ring-track {
+  fill: none;
+  stroke: rgba(255,255,255,.08);
+  stroke-width: 3;
+}
+.ring-fill {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-dasharray: 251.3;   /* 2 * π * 40 */
+  stroke-dashoffset: 251.3;  /* fully hidden */
+  transition: none;
+  filter: drop-shadow(0 0 6px rgba(41,182,246,.6));
+}
+#lockBtn.holding .ring-fill {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1.2s linear;
+}
+
+/* When unlocked, hide the lock overlay from interaction */
+#app:not(.locked) #lockOverlay { pointer-events: none; }
+#app:not(.locked) #lockBtn { opacity: 0; pointer-events: none; }
+
+/* ---------- Remote ---------- */
+#remote { flex: 1; overflow-y: auto; padding: 12px 12px calc(16px + var(--safe-b)); background: var(--panel);
+  display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch; }
+#remote button { background: var(--btn); border-radius: 12px; min-height: 48px; font-weight: 600; transition: background .1s, transform .05s; }
+#remote button:active, #remote button.pressed { background: var(--btn-hi); transform: scale(.96); }
+
+.row { display: grid; gap: 8px; }
+.row.one { grid-template-columns: 1fr; }
+.row.four { grid-template-columns: repeat(4, 1fr); }
+.row.five { grid-template-columns: repeat(5, 1fr); }
+.transport button { font-size: 18px; letter-spacing: -2px; }
+#remote .rec { color: var(--rec); font-size: 22px; }
+#remote .tivo { color: var(--accent); }
+.dim-row button { font-size: 13px; color: var(--muted); }
+#remote .power { color: #ff8a80; background: #2a1a1d; }
+
+.nav { display: grid; grid-template-columns: 1fr 1.6fr 1fr; gap: 10px; align-items: center; }
+.nav .col { display: flex; flex-direction: column; gap: 8px; }
+#remote .pill { min-height: 56px; }
+#remote .pill.small { font-size: 13px; min-height: 44px; color: var(--muted); }
+.rocker button { min-height: 64px !important; font-size: 17px; }
+.dpad { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 4px; aspect-ratio: 1; }
+.dpad .up { grid-area: 1 / 2; } .dpad .left { grid-area: 2 / 1; } .dpad .ok { grid-area: 2 / 2; }
+.dpad .right { grid-area: 2 / 3; } .dpad .down { grid-area: 3 / 2; }
+#remote .dpad .ok { border-radius: 50%; background: var(--accent); color: #001018; font-weight: 800; }
+
+.numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.digits { grid-column: 1 / -1; text-align: center; font-size: 26px; font-weight: 700; letter-spacing: 4px;
+  padding: 6px; color: var(--accent); font-variant-numeric: tabular-nums; }
+.numpad button { font-size: 22px; }
+#remote .numpad .go { background: var(--go); }
+#remote .numpad .dim { font-size: 15px; color: var(--muted); }
+
+/* ---------- Landscape: full-screen video, remote slides in ---------- */
+@media (orientation: landscape) {
+  #app { display: block; position: relative; }
+  #stage { position: fixed; inset: 0; aspect-ratio: auto; height: 100dvh; padding-top: 0; }
+  #topbar [data-act="remote"] { display: grid; }
+  #remote { position: fixed; top: 0; right: 0; bottom: 0; width: min(380px, 55vw); z-index: 10;
+    background: rgba(18,21,29,.94); backdrop-filter: blur(8px); transform: translateX(105%);
+    transition: transform .25s ease; padding-top: calc(12px + env(safe-area-inset-top, 0px));
+    padding-right: calc(12px + env(safe-area-inset-right, 0px)); }
+  #app.remote-open #remote { transform: none; }
+  #remote button { min-height: 42px; }
+  .rocker button { min-height: 52px !important; }
+}
